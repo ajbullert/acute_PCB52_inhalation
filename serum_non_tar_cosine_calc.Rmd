@@ -1,0 +1,82 @@
+---
+title: "Non_target_analysis"
+output: html_notebook
+---
+```{r, results='hide'}
+library(ggplot2) #needed for graphical plots
+library(ggpubr)
+library(tidyverse) #helps organize datasets
+library(dplyr)
+library(RColorBrewer)
+library(viridis)
+library(expss)
+library(car)
+library(lattice)
+library(gtsummary)
+library(readxl) #allows you to read in excel spreadsheets
+library(multcomp) #multiple comparison package
+library(lsa)
+library(pheatmap)
+```
+
+```{r}
+ser_cos <-read_xlsx("serum_cosine_20230501.xlsx")
+ser_cos<-as.data.frame(ser_cos)
+ser_cos$sex<-factor(ser_cos$sex, levels = c("male","female"))
+ser_cos$exposure<-factor(ser_cos$exposure, levels = c("low","high","low average", "high average"))
+#ser_cos[is.na(ser_cos)]<-0.0
+ser_cos<-drop_na(ser_cos)
+```
+
+
+```{r}
+data<-ser_cos[,3:9]
+rownames(data)<-ser_cos$sample_ID
+subset.data.frame(data, select = names(data)[-1])
+
+```
+
+```{r}
+res <- lsa::cosine(t(as.matrix(data[, -1])))
+res
+res<-signif(res, digits = 3)
+```
+
+```{r}
+write.table(res, file = "serum_theta_values.csv", row.names=TRUE, col.names=TRUE, sep=",", quote=TRUE)
+```
+
+
+```{r}
+
+z <- as.data.frame(ser_cos[,
+                            c( "sex","exposure")])
+rownames(z)<-rownames(res)
+
+```
+
+```{r}
+my_colour = list(
+    sex = c(male = "#999900", female = "#FF9933"),
+    exposure = c(low = "#666666", high = "#FF66CC",`low average` = "#66CCCC", `high average` = "#9966FF"))
+```
+
+
+```{r}
+tiff(file = "Serum_heatmap_cosine.tiff", units="in", width=8, height=5, res=1000)
+
+heat<-pheatmap(res, 
+         annotation_col = z,scale = "none", 
+         annotation_colors = my_colour,
+         display_numbers = res,
+         cluster_rows = F,
+         cluster_cols = F,
+         fontsize_number=10,
+         number_color = "black",
+         main = "Serum LC/MS metabolite profile cosine theta")
+heat
+dev.off()
+
+heat
+```
+
