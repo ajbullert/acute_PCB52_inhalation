@@ -475,15 +475,20 @@ colnames(recovery)[c(2:4)]<-c("PCB 77","4'OH-PCB 159","F-MeO-PCB 3")
 
 
 ```{r}
+rcvry
+```
+
+
+```{r}
 library(vtable)
-tbl_summary(rcvry,
+t1<-tbl_summary(rcvry,
                  by = tissue,
                  type = all_continuous() ~ "continuous2",
     statistic = all_continuous() ~ c("{mean} ({sd})", "{min}, {max}"),
     missing = "no"
   ) %>%
   modify_header(label ~ "**Recovery Standard**")
-
+t1
 
 library(flextable)
 t1 %>%
