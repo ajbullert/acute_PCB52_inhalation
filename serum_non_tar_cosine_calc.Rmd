@@ -17,6 +17,7 @@ library(readxl) #allows you to read in excel spreadsheets
 library(multcomp) #multiple comparison package
 library(lsa)
 library(pheatmap)
+library(psych)
 ```
 
 ```{r}
@@ -25,14 +26,16 @@ ser_cos<-as.data.frame(ser_cos)
 ser_cos$sex<-factor(ser_cos$sex, levels = c("male","female"))
 ser_cos$exposure<-factor(ser_cos$exposure, levels = c("low","high","low average", "high average"))
 #ser_cos[is.na(ser_cos)]<-0.0
-ser_cos<-drop_na(ser_cos)
+#ser_cos<-drop_na(ser_cos)
 ```
 
 
 ```{r}
 data<-ser_cos[,3:9]
-rownames(data)<-ser_cos$sample_ID
-subset.data.frame(data, select = names(data)[-1])
+avg_data<-data[grep("avg", data$sample_ID) ,]
+avg_data
+rownames(avg_data)<-avg_data$sample_ID
+subset.data.frame(avg_data, select = names(avg_data)[-1])
 
 ```
 
@@ -40,10 +43,27 @@ subset.data.frame(data, select = names(data)[-1])
 res <- lsa::cosine(t(as.matrix(data[, -1])))
 res
 res<-signif(res, digits = 3)
+simple_res<-lower.tri(res)
+res[lower.tri(res)]<-NA
+res
 ```
 
 ```{r}
 write.table(res, file = "serum_theta_values.csv", row.names=TRUE, col.names=TRUE, sep=",", quote=TRUE)
+```
+
+#just average group values for each metabolite
+```{r}
+res1 <- lsa::cosine(t(as.matrix(avg_data[, -1])))
+res1
+res1<-signif(res1, digits = 3)
+simple_res1<-lower.tri(res1)
+res1[lower.tri(res1)]<-NA
+res1
+```
+
+```{r}
+write.table(res1, file = "serum_theta_values_group_averages.csv", row.names=TRUE, col.names=TRUE, sep=",", quote=TRUE)
 ```
 
 
@@ -66,7 +86,8 @@ my_colour = list(
 tiff(file = "Serum_heatmap_cosine.tiff", units="in", width=8, height=5, res=1000)
 
 heat<-pheatmap(res, 
-         annotation_col = z,scale = "none", 
+         annotation_col = z,
+         scale = "none", 
          annotation_colors = my_colour,
          display_numbers = res,
          cluster_rows = F,
